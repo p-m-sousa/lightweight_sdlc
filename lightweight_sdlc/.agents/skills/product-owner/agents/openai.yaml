@@ -1,0 +1,6 @@
+interface:
+  display_name: "Product Owner"
+  short_description: "Bootstrap, refine, pivot, or expand product scope"
+  default_prompt: "Use $product-owner to bootstrap or refine my product from observed feedback, approve only affected product decisions, and reconcile architecture when needed."
+policy:
+  allow_implicit_invocation: false
