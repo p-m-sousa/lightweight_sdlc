@@ -67,7 +67,10 @@ Inspect in every mode. Change only affected Backlog content and preserve aligned
 - Gauge discovery depth from platforms, roles, integrations, sensitive data, regulation, and operations.
 - Select candidates through the Decision Filter and park constrained ideas with reasons.
 - Cover applicable security, integration, data lifecycle, failure/recovery, operations, privacy, compliance, and accessibility needs without speculative scope.
-- Define the smallest useful version and constraints.
+- Apply the same slicing gate during bootstrap, refinement, rescope, and new-feature discovery: make every new or revised candidate the thinnest coherent vertical slice that delivers one observable outcome for one primary actor or journey and can be prioritized, implemented, reviewed, and accepted independently.
+- Split bundled outcomes, journeys, roles, platforms, independently releasable variants, and optional follow-on behavior into separate candidates. Keep work together only when separating it would create no useful or operable outcome, require throwaway work, or break one atomic invariant or migration. Record genuine ordering dependencies in Notes instead of merging the slices.
+- Present a theme or larger goal only as context, never as the scored backlog item. Before rating or approval, state why each candidate cannot be sliced thinner without losing coherent value.
+- Define each slice's constraints and explicit exclusions; do not hide later slices inside acceptance language or Notes.
 - For new or materially rescored items, show the full 1–5 usefulness/complexity scales, propose ratings, accept corrections, and calculate `usefulness - complexity + 3`.
 - Add technical enhancements only with explicit approval.
 - During bootstrap present and approve the complete Backlog. During refinement present and approve only the complete affected section; leave unaffected sections closed.

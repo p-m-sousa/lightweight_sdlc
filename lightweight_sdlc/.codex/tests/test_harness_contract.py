@@ -121,6 +121,40 @@ class HarnessContractTests(unittest.TestCase):
         self.assertNotIn("Write the approved product changes and continue to architecture.", readme)
         self.assertNotIn("separate refinement skill", skill.casefold())
 
+    def test_product_owner_requires_thin_backlog_slices_in_all_modes(self) -> None:
+        skill = (ROOT / ".agents/skills/product-owner/SKILL.md").read_text()
+        for contract in (
+            "thinnest coherent vertical slice",
+            "bootstrap, refinement, rescope, and new-feature discovery",
+            "one observable outcome for one primary actor or journey",
+            "can be prioritized, implemented, reviewed, and accepted independently",
+            "state why each candidate cannot be sliced thinner",
+            "do not hide later slices inside acceptance language or Notes",
+        ):
+            self.assertIn(contract, skill)
+
+    def test_delegated_roles_fail_fast_without_requesting_tool_approval(self) -> None:
+        agents = (ROOT / "AGENTS.md").read_text()
+        kanban = (ROOT / "KANBAN.md").read_text()
+        self.assertIn("Delegates never install or request tool approval", agents)
+        self.assertIn("immediately return the exact `blocked` condition", agents)
+        self.assertIn("If planning is blocked, leave the item in Backlog", kanban)
+        self.assertIn("If review is blocked, remain in Building", kanban)
+
+        for name in ("planner", "reviewer", "uat", "architect"):
+            instructions = self.load_toml(f".codex/agents/{name}.toml")["developer_instructions"]
+            for contract in (
+                "preflight the tools, dependencies, permissions, credentials",
+                "Never install dependencies or issue a tool approval request",
+                "no equivalent in-scope workaround exists",
+                "stop immediately",
+            ):
+                self.assertIn(contract, instructions, f"{name} lacks fail-fast contract")
+            self.assertIn("blocked", instructions.casefold())
+
+        planner = self.load_toml(".codex/agents/planner.toml")["developer_instructions"]
+        self.assertIn("Verdict: ready | needs user decision | does not align | blocked", planner)
+
 
 if __name__ == "__main__":
     unittest.main()

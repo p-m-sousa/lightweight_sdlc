@@ -7,10 +7,11 @@ This is the procedure of record for delivery transitions and the compact index o
 1. Confirm the exact item exists in `BACKLOG.md` and passes the Product Vision Decision Filter.
 1. Classify its delivery profile, surface tags, planning route, review route, and acceptance route using `AGENTS.md`.
 1. For `standard`, the primary builder prepares the smallest coherent plan. For `deep`, spawn `planner` with `fork_turns="none"`, Terra Medium, and only the root, item, profile, tags, and `pass_type=initial`.
-1. Continue only when planning is executable and aligned. Scan `docs/features/FEAT-[0-9][0-9][0-9].md`, assign the next unused ID, create the permanent record from the template, remove the backlog row, and add a Building card.
+1. Continue only when planning is executable and aligned. If planning is blocked, leave the item in Backlog and promptly surface only the exact missing capability or access condition. Otherwise scan `docs/features/FEAT-[0-9][0-9][0-9].md`, assign the next unused ID, create the permanent record from the template, remove the backlog row, and add a Building card.
 1. If active `MVP.md` includes the item, add its feature ID and set it to Building. MVP inclusion changes still require explicit user approval.
 1. Implement the approved scope in Building. Run focused validation and applicable code/design self-checks, update the project README when its documented facts changed, and record results once.
 1. Spawn the mandatory read-only `reviewer` with `fork_turns="none"`. Use Terra High for `standard` and Sol High for `deep`.
+1. If review is blocked, remain in Building, record the blocked cycle, and promptly surface only the exact missing capability or access condition. Do not proceed to Testing or replace independent review with builder self-review.
 1. Resolve every valid in-scope `Blocking` and `Should fix` finding. Send fixes back to the same Reviewer with `pass_type=focused-recheck`; rerun only affected validation unless a broad-suite trigger applies.
 1. If standard review finds a deep trigger, update the record to `deep` and obtain focused Sol-High clearance from the same Reviewer before Testing. Track findings remain non-blocking and require approval before backlog addition.
 1. After clearance, move the record/card to Testing and update active MVP status when applicable.

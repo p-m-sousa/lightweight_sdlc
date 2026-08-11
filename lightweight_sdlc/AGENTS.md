@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This is the builder's always-on manual. `KANBAN.md` owns transitions; the feature record owns evidence; named documents own product, architecture, code, and design rules.
+This is the builder's always-on manual. `KANBAN.md` owns transitions; feature records own evidence; named documents own their subjects.
 
 ## Authority and Scope
 
@@ -13,7 +13,7 @@ This is the builder's always-on manual. `KANBAN.md` owns transitions; the featur
 
 ## Delivery Profile
 
-Before creating the feature record, classify the work and record its profile, surface tags, and routes.
+Before creating a feature record, classify its profile, surface tags, and routes.
 
 Use `deep` when the work affects authentication, authorization, privacy, security, destructive behavior, payments, schemas or migrations, persistence guarantees, public contracts, shared runtime configuration, caching, concurrency, multiple journeys, consequential integrations, external side effects, architecture boundaries, or shared journey infrastructure.
 
@@ -31,9 +31,10 @@ If standard review discovers a deep trigger, obtain focused Sol-High reviewer cl
 ## Delegation
 
 - Spawn every role with `fork_turns="none"`. Planner, Reviewer, and UAT receive only root, item/feature, profile, tags, and pass type; Architect receives its role-defined product handoff.
-- The Planner is conditional; independent review is mandatory; UAT is adaptive as defined above. Builder self-review never replaces the Reviewer.
+- Builder self-review never replaces the Reviewer.
+- Delegates never install or request tool approval. Preflight tools, dependencies, and access; use an equivalent in-scope fallback or immediately return the exact `blocked` condition.
 - After 15 silent minutes request status, repeat after 10, and interrupt after 5 more only if still silent. Inspect the write scope before one replacement attempt.
-- Use Standard speed. Do not enable Fast mode for this harness.
+- Use Standard speed, never Fast mode.
 
 ## Context and Validation
 

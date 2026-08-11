@@ -35,7 +35,7 @@ Independent UAT is required for user-visible behavior, navigation, responsive/ac
 
 The primary builder uses GPT-5.6 Sol at Medium. Product Owner work uses Plan-mode High. Architect uses Sol High. Default subagents use Terra Medium; review is explicitly spawned at Terra High or Sol High according to profile. Standard speed is required because Fast mode consumes usage faster.
 
-All custom agents start with `fork_turns="none"` and a compact repository-backed assignment instead of inherited interview and implementation history. The same Reviewer and UAT threads are reused for focused rework.
+All custom agents start with `fork_turns="none"` and a compact repository-backed assignment instead of inherited interview and implementation history. Each role preflights required capabilities, uses an equivalent in-scope workaround when available, and otherwise returns an immediate precise blocker; subagents never install dependencies or issue tool approval requests. The same Reviewer and UAT threads are reused for focused rework.
 
 ## Roles
 
@@ -90,7 +90,7 @@ When upgrading an existing harness, migrate only active feature records: add the
 
 ### Backlog and Profiling
 
-Backlog candidates normally have no feature ID. A pull begins by applying the Product Vision Decision Filter and assigning delivery profile, surface tags, and Planning/Review/Acceptance routes.
+Backlog candidates normally have no feature ID. Product Owner makes each new or revised candidate the thinnest coherent vertical slice that produces an independently acceptable outcome, including additions made during refinement. A pull begins by applying the Product Vision Decision Filter and assigning delivery profile, surface tags, and Planning/Review/Acceptance routes.
 
 The primary builder plans standard work. Deep work receives an independent Planner. Only an aligned, executable plan enters Building.
 
@@ -98,7 +98,7 @@ The primary builder plans standard work. Deep work receives an independent Plann
 
 The builder creates the next `FEAT-XXX` record, updates the linked board card and active MVP when applicable, implements the smallest approved behavior, updates stale README sections, and records focused checks once. Each record states the README impact or why no update was needed.
 
-Every feature receives independent review. Standard work uses Terra High; deep work uses Sol High. A deep trigger found during standard review promotes the record and requires focused Sol-High clearance. Blocking and Should-fix findings are resolved through the same Reviewer thread before Testing. Track proposals remain non-blocking and require approval before backlog addition.
+Every feature receives independent review. Standard work uses Terra High; deep work uses Sol High. A deep trigger found during standard review promotes the record and requires focused Sol-High clearance. Blocking and Should-fix findings are resolved through the same Reviewer thread before Testing. A Reviewer tooling or access blocker leaves the feature in Building and is surfaced immediately. Track proposals remain non-blocking and require approval before backlog addition.
 
 ### Testing and Acceptance
 

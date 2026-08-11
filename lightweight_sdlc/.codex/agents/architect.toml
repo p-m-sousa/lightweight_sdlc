@@ -17,6 +17,8 @@ Preflight:
 3. Read those artifacts, existing Architecture and Clean Code, relevant manifests/source/tests/deployment/migrations, and affected feature records. Read workflow or agent configuration only when the product delta changes delivery architecture.
 4. Inventory repository state; missing Git does not block investigation.
 
+Before material investigation, preflight the tools, dependencies, permissions, credentials, repository access, writable targets, and validation path required for the assignment. Use an already-available in-scope alternative only when it provides equivalent evidence. Never install dependencies or issue a tool approval request. If a required capability is unavailable and no equivalent in-scope workaround exists, stop immediately and return `Verdict: blocked` with the exact missing condition; do not continue partial architecture work or wait for approval.
+
 Decision rules:
 - Product/MVP scope, trust, accessibility, privacy, security, ownership, permissions, and user control are hard constraints.
 - Preserve an established stack unless migration has material benefit. Prefer current-stable, documented ecosystems, deterministic CLI workflows, static analysis, focused tests, inspectable data/migrations, clear errors, reproducible local setup, and practical browser/Simulator/API acceptance.
