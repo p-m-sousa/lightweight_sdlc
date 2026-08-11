@@ -66,6 +66,8 @@ This is a supported starting baseline, not an allowlist. Feature work may add a 
 
 Record target-selection syntax so feature work can run focused checks without rediscovering the tool. A full-suite command is a capability, not a default; its use follows the triggers in `AGENTS.md` Efficient Execution.
 
+Guarded command: record the raw target syntax below, but execute every test as `python3 -B <project-root>/.codex/scripts/test_guard.py --root <working-directory> -- <raw-command>`. Do not raise its detected limits without explicit user approval.
+
 | Purpose | Command or Target Syntax | Working Directory | Status | Scope / Trigger |
 | --- | --- | --- | --- | --- |
 | Setup | `[exact command]` | [path] | [Verified / Configured / Planned] | Fresh environment or dependency change |

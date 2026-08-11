@@ -54,6 +54,7 @@ All custom agents start with `fork_turns="none"` and a compact repository-backed
 | [.codex/config.toml](.codex/config.toml) | Builder and subagent model/effort defaults and concurrency limits. |
 | [.codex/agents/](.codex/agents/) | Architect, conditional Planner, mandatory Reviewer, and adaptive UAT definitions. |
 | [.codex/scripts/context_router.py](.codex/scripts/context_router.py) | Read-only, profile-aware, budgeted phase context packets. |
+| [.codex/scripts/test_guard.py](.codex/scripts/test_guard.py) | Deterministic host/container resource detection and guarded test execution. |
 | [.codex/tests/](.codex/tests/) | Static contracts and representative web, agentic-AI, and iOS router fixtures. |
 | [.agents/skills/product-owner/](.agents/skills/product-owner/) | Product discovery, approvals, backlog, and MVP workflow. |
 | [PRODUCT_VISION.md](PRODUCT_VISION.md) | North Star, trust promise, principles, and Decision Filter. |
@@ -125,6 +126,8 @@ The router stays in the harness only while representative web UI, agentic-AI, an
 ## Validation Scope
 
 Focused validation is the default: applicable static checks, affected unit/integration tests, and feature-specific end-to-end coverage for an executable journey or integration boundary. Full automated and full end-to-end suites run only for the shared-risk and release triggers in `AGENTS.md`.
+
+Every executable test is launched through `.codex/scripts/test_guard.py`. It derives CPU, current memory headroom, disk reserve, and container limits directly from the environment and applies deterministic worker, Node-heap, aggregate-RSS, disk, and timeout limits sized to preserve normal parallelism. It does not consume Codex user settings. Missing inspection is reported to the user and uses bounded fallback limits without blocking the test; confirmed unsafe headroom still stops it. A higher limit or unguarded exception requires explicit user approval, and missing system permission is requested through Codex's normal approval boundary.
 
 Still-current passing results are reused. After fixes, failed and affected checks rerun; unchanged suites do not repeat merely for a state transition.
 

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This is the builder's always-on manual. `KANBAN.md` owns transitions; feature records own evidence; named documents own their subjects.
+Builder manual. `KANBAN.md` owns transitions; feature records own evidence; named documents own their subjects.
 
 ## Authority and Scope
 
@@ -12,8 +12,6 @@ This is the builder's always-on manual. `KANBAN.md` owns transitions; feature re
 - Preserve unrelated work. Never broaden work for an adjacent opportunity.
 
 ## Delivery Profile
-
-Before creating a feature record, classify its profile, surface tags, and routes.
 
 Use `deep` when the work affects authentication, authorization, privacy, security, destructive behavior, payments, schemas or migrations, persistence guarantees, public contracts, shared runtime configuration, caching, concurrency, multiple journeys, consequential integrations, external side effects, architecture boundaries, or shared journey infrastructure.
 
@@ -30,7 +28,7 @@ If standard review discovers a deep trigger, obtain focused Sol-High reviewer cl
 
 ## Delegation
 
-- Spawn every role with `fork_turns="none"`. Planner, Reviewer, and UAT receive only root, item/feature, profile, tags, and pass type; Architect receives its role-defined product handoff.
+- Spawn roles with `fork_turns="none"`. Planner, Reviewer, and UAT receive only root, item/feature, profile, tags, and pass type; Architect receives its role-defined product handoff.
 - Builder self-review never replaces the Reviewer.
 - Delegates never install or request tool approval. Preflight tools, dependencies, and access; use an equivalent in-scope fallback or immediately return the exact `blocked` condition.
 - After 15 silent minutes request status, repeat after 10, and interrupt after 5 more only if still silent. Inspect the write scope before one replacement attempt.
@@ -38,7 +36,7 @@ If standard review discovers a deep trigger, obtain focused Sol-High reviewer cl
 
 ## Context and Validation
 
-At phase entry, use the read-only packet as a starting index, never an evidence cap:
+At phase entry, use the read-only packet as a starting index:
 
 | Phase | Command |
 | --- | --- |
@@ -47,13 +45,13 @@ At phase entry, use the read-only packet as a starting index, never an evidence 
 | Review | `python3 -B .codex/scripts/context_router.py review --feature docs/features/FEAT-XXX.md` |
 | UAT | `python3 -B .codex/scripts/context_router.py uat --feature docs/features/FEAT-XXX.md` |
 
-Expand into affected code, tests, callers, configuration, schemas, migrations, or complete document sections whenever correctness requires it. Prefer targeted output, and re-query a narrow range when tool output is truncated.
+Expand whenever correctness requires it; re-query narrow ranges when output truncates.
 
-- Before review, run applicable static checks, affected unit/integration tests, and feature-specific end-to-end coverage when the change crosses an executable journey or integration boundary.
-- Run full automated regression only for shared/foundational code, public contracts, schemas/migrations, auth or permissions, dependencies, runtime configuration, concurrency, caches/global state, a focused failure indicating wider risk, or an explicit architecture/release gate.
-- Run full end-to-end regression only for shared journey infrastructure, risk across multiple existing journeys, inability to isolate with targeted coverage, or an explicit release gate.
-- After fixes, rerun failed/affected checks plus cheap relevant static checks. Reuse current results and record commands once.
-- Apply `CLEAN_CODE.md` after the final implementation pass and relevant fixes. Apply `DESIGN_SYSTEM.md` for user-facing work. Match nearby conventions unless a material standards conflict requires user direction.
+- Before review, run applicable static checks, affected unit/integration tests, and feature end-to-end coverage for an executable journey or integration boundary.
+- Full automated regression requires shared code/contracts, schemas/migrations, auth/permissions, dependencies, runtime configuration, concurrency, global state, wider risk from a focused failure, or an architecture/release gate. Full end-to-end requires shared journey infrastructure, multi-journey risk, inability to isolate, or a release gate.
+- Run every test as `python3 -B .codex/scripts/test_guard.py --root <working-directory> -- <command>`. Its live host/container policy ignores Codex settings, caps workers/Node heap, and monitors RSS/disk/time. Raising or bypassing a limit requires approval. Request Codex approval for inspection; if unavailable, alert the user and continue with the bounded fallback rather than block testing.
+- After fixes, rerun failed/affected checks plus cheap static checks. Reuse current results and record commands once.
+- Apply `CLEAN_CODE.md` after final implementation/fixes and `DESIGN_SYSTEM.md` for user-facing work. Match nearby conventions absent a material conflict.
 - Update README when purpose, surfaces, setup/run/validation, status, or contributor guidance changes; link to canonical detail.
 
 ## Records and Safety

@@ -155,6 +155,21 @@ class HarnessContractTests(unittest.TestCase):
         planner = self.load_toml(".codex/agents/planner.toml")["developer_instructions"]
         self.assertIn("Verdict: ready | needs user decision | does not align | blocked", planner)
 
+    def test_test_execution_uses_environment_derived_guardrails(self) -> None:
+        agents = (ROOT / "AGENTS.md").read_text()
+        architecture = (ROOT / "ARCHITECTURE.md").read_text()
+        uat = self.load_toml(".codex/agents/uat.toml")["developer_instructions"]
+        guard = ROOT / ".codex/scripts/test_guard.py"
+
+        self.assertTrue(guard.is_file())
+        self.assertIn("test_guard.py", agents)
+        self.assertIn("bounded fallback rather than block testing", agents)
+        self.assertIn("Codex approval", agents)
+        self.assertIn("Guarded command", architecture)
+        self.assertIn("test_guard.py", architecture)
+        self.assertIn("test_guard.py", uat)
+        self.assertIn("approved override", uat)
+
 
 if __name__ == "__main__":
     unittest.main()

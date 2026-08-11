@@ -37,7 +37,7 @@
 ## Implementation and Validation
 
 - Implementation notes: [Important completed decisions.]
-- Focused checks: [Commands, scope, and results.]
+- Focused checks: [Guarded commands, detected limits, scope, and results.]
 - Broad-suite trigger: [Trigger and result / None — focused validation used.]
 - Code self-check: [Pass / N/A]
 - Design self-check: [Pass / N/A]
@@ -62,7 +62,7 @@ Append later review cycles only when rework or risk escalation requires them.
 - Executor: [Primary builder / Independent UAT agent]
 - Date: [YYYY-MM-DD]
 - Verdict: [pass / fail / blocked]
-- Environment: [Target, disposable test data, tool path, and platform/viewport coverage.]
+- Environment: [Target, disposable test data, resource-guard policy/result, tool path, and platform/viewport coverage.]
 - Scope: [All feature cases / Failed and affected cases plus core case / All cases because shared behavior changed.]
 - Repository-wide end-to-end regression: [Not run / Trigger, command, and result.]
 
