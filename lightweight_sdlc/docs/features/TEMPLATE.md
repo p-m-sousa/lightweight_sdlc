@@ -96,5 +96,5 @@ Remove this unused placeholder when the first acceptance pass succeeds.
 
 When selected, replace `Pending` with exactly one outcome:
 
-- Done: [YYYY-MM-DD — passing acceptance reviewed; approval and commit authorization; MVP update.]
+- Done: [YYYY-MM-DD — passing acceptance reviewed; Done approval; separate commit authorization; MVP update; automatic active-MVP release-eligibility result.]
 - Canceled: [YYYY-MM-DD — approval, reason, scoped-work disposition, unrelated-work check, backlog and MVP disposition.]

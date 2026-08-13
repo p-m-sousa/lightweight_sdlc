@@ -31,21 +31,36 @@ An included capability marked Canceled blocks release readiness until the user e
 
 ## Release Readiness
 
-- [ ] Every included capability is Done after the user reviewed passing acceptance evidence.
-- [ ] The core end-to-end journey passes independent UAT when it has a meaningful executable user journey.
-- [ ] Fresh setup, build, and run instructions work in the supported environment.
-- [ ] Required automated validation passes.
-- [ ] No known unresolved release-blocking defects remain.
-- [ ] User-facing and operator documentation is current.
-- [ ] Applicable accessibility and privacy promises are verified.
-- [ ] Applicable migration, backup, restore, and recovery promises are verified.
+- Canonical release record: [Not created / `docs/releases/MVP-RELEASE.md`]
 
-Mark a non-applicable check `N/A` with a short reason rather than silently omitting it.
+After every included capability reaches Done, the harness automatically evaluates eligibility. When all included capabilities are Done with reviewed passing acceptance, it creates or resumes the one canonical harness-owned release record and continues safe local, no-cost readiness work without another prompt.
+
+- [ ] `RR-001` Every included capability is Done after the user reviewed passing acceptance evidence.
+- [ ] `RR-002` The declared core end-to-end smoke case passes.
+- [ ] `RR-003` Fresh setup instructions work in the claimed environment.
+- [ ] `RR-004` Build and local run/package commands work in the claimed environment.
+- [ ] `RR-005` Required automated validation passes.
+- [ ] `RR-006` No known unresolved release-blocking defects remain.
+- [ ] `RR-007` User-facing, operator, and current-status documentation is consistent.
+- [ ] `RR-008` Applicable accessibility promises are verified.
+- [ ] `RR-009` Applicable privacy promises are verified.
+- [ ] `RR-010` Applicable migration promises are verified.
+- [ ] `RR-011` Applicable backup promises are verified.
+- [ ] `RR-012` Applicable restore promises are verified.
+- [ ] `RR-013` Applicable recovery and rollback promises are verified.
+- [ ] `RR-014` An independent Reviewer confirms the completed release evidence.
+
+The canonical release record owns exact statuses and evidence. Each check is exactly `pending`, `pass`, `fail`, `blocked`, or `n/a`; every `n/a` requires a reason, and missing evidence never implies pass.
 
 ## Release Approval
 
-Feature Done approval and commit authorization do not constitute MVP release approval.
+The canonical release record owns these independent authority fields. No field or transition grants or implies another.
 
-- Ready for release review: [Yes / No]
-- User approved MVP release: [Yes / No]
-- Approval date and notes: [YYYY-MM-DD — notes]
+- Feature Done approval(s): [Per-feature references / incomplete]
+- Commit authorization: [Not granted / canonical release-record reference]
+- Live or cost-bearing UAT authorization: [Not granted / canonical release-record reference]
+- Ready-for-release-review determination: [No / Yes — canonical release-record reference]
+- Final MVP release approval: [Not granted / explicit user approval and canonical release-record reference]
+- Publish/deploy authorization: [Not granted / canonical release-record reference]
+
+Never mark this MVP Released without the user's separate explicit Final MVP release approval. Never publish or deploy without separate Publish/deploy authorization.

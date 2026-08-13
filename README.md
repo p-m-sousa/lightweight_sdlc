@@ -4,11 +4,15 @@ A repo-based harness for agent-assisted product discovery, architecture, feature
 
 The default feature path is:
 
-**Profile → Plan → Build → Independent Review → Acceptance ↔ Fix and Focused Review → Human Done Approval**
+**Profile → Plan → Build → Independent Review → Acceptance ↔ Fix and Focused Review → Human Done Approval → Automatic Release Readiness → Independent Evidence Review → Human Release Approval**
 
 One backlog selection authorizes the agent-owned loop through passing acceptance. Done, commit authorization, cost commitments, cancellation, backlog additions, and MVP release remain explicit human decisions.
 
 > This distribution README is not project content and is not counted as a token optimization. If it remains in a duplicated harness, Product Owner replaces it with the project README after bootstrap architecture completes.
+
+## Current Status
+
+This distribution contains reusable, uninstantiated process templates. A copied project records real MVP/release status in `MVP.md`, its project README, and the single harness-owned `docs/releases/MVP-RELEASE.md` created automatically when eligible.
 
 ## What the Harness Preserves
 
@@ -18,6 +22,7 @@ One backlog selection authorizes the agent-owned loop through passing acceptance
 - A concise project README created at bootstrap and maintained whenever product, platform, setup, validation, status, or contributor guidance changes.
 - Mandatory independent code review and mandatory fixes for valid Blocking and Should-fix findings.
 - UAT as a lifecycle gate, with independent execution for meaningful user journeys and builder execution only for low-risk work without such a journey.
+- Automatic post-Done MVP eligibility, append-only readiness evidence, and independent release-evidence review without a follow-up prompt.
 - Human control over Done, commits, cancellation, tracked follow-ups, new costs, and MVP release.
 
 ## Usage-Efficient Operating Model
@@ -43,7 +48,7 @@ All custom agents start with `fork_turns="none"` and a compact repository-backed
 - **Architect:** chooses or verifies the smallest product-correct technical foundation at bootstrap and after architecture-relevant approved product changes.
 - **Primary builder:** classifies risk, plans standard work, owns state and implementation, runs focused checks, applies fixes, and executes low-risk acceptance.
 - **Planner:** read-only and conditional for deep-profile features.
-- **Reviewer:** read-only, independent, and mandatory for every feature.
+- **Reviewer:** read-only, independent, and mandatory for every feature and completed release-evidence review.
 - **UAT:** workspace-write only to the assigned feature's acceptance section and conditional on the recorded acceptance route.
 
 ## Runtime Files
@@ -55,7 +60,7 @@ All custom agents start with `fork_turns="none"` and a compact repository-backed
 | [.codex/agents/](.codex/agents/) | Architect, conditional Planner, mandatory Reviewer, and adaptive UAT definitions. |
 | [.codex/scripts/context_router.py](.codex/scripts/context_router.py) | Read-only, profile-aware, budgeted phase context packets. |
 | [.codex/scripts/test_guard.py](.codex/scripts/test_guard.py) | Deterministic host/container resource detection and guarded test execution. |
-| [.codex/tests/](.codex/tests/) | Static contracts and representative web, agentic-AI, and iOS router fixtures. |
+| [.codex/tests/](.codex/tests/) | Static contracts and representative web, agentic-AI, iOS, and release router fixtures. |
 | [.agents/skills/product-owner/](.agents/skills/product-owner/) | Product discovery, approvals, backlog, and MVP workflow. |
 | [PRODUCT_VISION.md](PRODUCT_VISION.md) | North Star, trust promise, principles, and Decision Filter. |
 | [MVP.md](MVP.md) | Optional minimum release outcome and included capabilities. |
@@ -65,9 +70,10 @@ All custom agents start with `fork_turns="none"` and a compact repository-backed
 | [BACKLOG.md](BACKLOG.md) | Approved candidate product and technical work. |
 | [KANBAN.md](KANBAN.md) | Canonical delivery transition procedure and board. |
 | [docs/features/TEMPLATE.md](docs/features/TEMPLATE.md) | Single permanent feature-record contract. |
+| [docs/releases/TEMPLATE.md](docs/releases/TEMPLATE.md) | Canonical harness-owned MVP release-readiness record contract. |
 | [UI_TWEAKS.md](UI_TWEAKS.md) | User-approved lightweight UI polish. |
 
-The `.codex/tests/` suite verifies configuration, prompt ceilings, routing contracts, packet behavior, Git-state reporting, and representative web UI, agentic web app, and iOS profiles.
+The `.codex/tests/` suite verifies configuration, prompt ceilings, lifecycle/release contracts, packet behavior, Git-state reporting, and representative web UI, agentic web app, iOS, and release-readiness routes.
 
 ## Copy Into a Project
 
@@ -113,11 +119,15 @@ A passing verdict remains in Testing for human review. Only explicit approval mo
 
 ### Done, Canceled, and MVP Release
 
-Done and cancellation require explicit approval. Cancellation removes only isolatable feature work. MVP release becomes reviewable only after every included capability is Done and all applicable setup, build, validation, documentation, accessibility, privacy, migration, backup, restore, and recovery checks pass; release then requires separate approval.
+Done and cancellation require explicit approval. Cancellation removes only isolatable feature work. After every active-MVP Done, the builder immediately evaluates eligibility. Once all included capabilities are Done with reviewed passing acceptance, it creates or resumes exactly `docs/releases/MVP-RELEASE.md` and continues safe local/no-cost evidence mapping, documentation checks, deterministic tooling, and guarded validation without another prompt.
+
+The record freezes the MVP/checklist snapshot and platform/runtime claims, uses stable checks with `pending|pass|fail|blocked|n/a`, and appends readiness/rework cycles. Missing evidence never passes; `n/a` needs a reason. Remediation reruns affected checks plus core smoke, expanding only for existing broad-suite triggers. A missing product deliverable becomes a prepared decision with evidence, proposed scope, and a recommended backlog item; product work starts only after normal scope authorization, links its feature record, and automatically resumes readiness after Done.
+
+Independent review of completed release evidence is required before the readiness determination. Feature Done, commit, live/cost UAT, readiness, final MVP release, and publish/deploy authorities remain separate. Only the user's separate explicit release approval marks the MVP Released; publish/deploy needs its own authorization.
 
 ## Context Routing
 
-Each phase generates a current packet capped around 6,000 characters. Packets use one source range per block, include only profile-relevant design/AI context, distinguish unavailable/clean/changed Git states, and point to omitted optional ranges when the soft budget is reached.
+Each phase generates a current packet capped around 6,000 characters. Packets use one source range per block, include only profile-relevant design/AI context, distinguish unavailable/clean/changed Git states, and point to omitted optional ranges when the soft budget is reached. Release packets index the canonical record, active MVP readiness/approval, platform/runtime claims, release commands, and current-status documentation.
 
 The packet is never an evidence cap. Agents inspect affected code, callers, tests, configuration, schemas, migrations, or complete sections when correctness requires it.
 
@@ -142,6 +152,7 @@ The target is at least 30% lower median usage for comparable standard features w
 - `AGENTS.md`: authority, risk routing, delegation, validation, and safety.
 - `KANBAN.md`: lifecycle transitions and board.
 - `docs/features/FEAT-XXX.md`: all delivery evidence and final disposition.
+- `docs/releases/MVP-RELEASE.md`: the single harness-owned, append-only active-MVP release-readiness record.
 - Custom agents: role-specific behavior and compact outputs.
 - Product, MVP, architecture, code, and design documents: their named subject matter.
 - This README: distribution orientation only.

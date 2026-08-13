@@ -23,6 +23,10 @@ class ContextRouterTests(unittest.TestCase):
         relative = str((FIXTURES / fixture).relative_to(ROOT))
         return router.build_packet(ROOT, phase, feature=relative, budget=budget)
 
+    def release_packet(self, budget: int = 6000) -> str:
+        relative = str((FIXTURES / "release-record.md").relative_to(ROOT))
+        return router.build_packet(ROOT, "release", release=relative, budget=budget)
+
     def test_profile_sensitive_sections(self) -> None:
         web = self.packet("web-ui.md")
         agentic = self.packet("agentic-ai.md")
@@ -80,6 +84,42 @@ class ContextRouterTests(unittest.TestCase):
 
     def test_missing_optional_file_is_safe(self) -> None:
         self.assertEqual(router.read_lines(ROOT / "missing-design-file.md"), [])
+
+    def test_release_packet_routes_canonical_readiness_context(self) -> None:
+        packet = self.release_packet()
+        for contract in (
+            "release record metadata",
+            "Frozen MVP and Checklist Snapshot",
+            "Supported Platform and Runtime Claims",
+            "Deterministic Release Commands and Cases",
+            "latest readiness and rework cycles",
+            "Readiness Cycle 2",
+            "Rework Cycle 1",
+            "Separate Approval Authorities",
+            "MVP.md",
+            "Release Readiness",
+            "Release Approval",
+            "release command rows",
+            "current-status documentation",
+        ):
+            self.assertIn(contract, packet)
+        self.assertNotIn("### Readiness Cycle 1", packet)
+        self.assertLessEqual(len(packet), 7000)
+
+    def test_release_packet_budget_keeps_source_indexes(self) -> None:
+        packet = self.release_packet(budget=1000)
+        self.assertIn("release record metadata", packet)
+        self.assertIn("Omitted by packet budget", packet)
+        self.assertIn("release-record.md:", packet)
+        self.assertIn("MVP.md:", packet)
+        self.assertIn("ARCHITECTURE.md:", packet)
+
+    def test_release_cli_accepts_only_the_canonical_record_path(self) -> None:
+        fixture = str((FIXTURES / "release-record.md").relative_to(ROOT))
+        argv = ["context_router.py", "release", "--root", str(ROOT), "--release", fixture]
+        with patch.object(sys, "argv", argv):
+            with self.assertRaisesRegex(SystemExit, "canonical record docs/releases/MVP-RELEASE.md"):
+                router.main()
 
 
 if __name__ == "__main__":

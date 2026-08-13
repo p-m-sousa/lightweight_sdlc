@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -169,6 +170,115 @@ class HarnessContractTests(unittest.TestCase):
         self.assertIn("test_guard.py", architecture)
         self.assertIn("test_guard.py", uat)
         self.assertIn("approved override", uat)
+
+    def test_done_automatically_triggers_release_eligibility(self) -> None:
+        agents = (ROOT / "AGENTS.md").read_text()
+        kanban = (ROOT / "KANBAN.md").read_text()
+        self.assertIn("After every active-MVP Done, automatically apply", agents)
+        self.assertIn("After every active-MVP capability reaches Done, immediately evaluate release eligibility", kanban)
+        self.assertIn("do not wait for another user prompt", kanban)
+        self.assertIn("all included capabilities are Done with reviewed passing acceptance", kanban)
+        self.assertIn("automatically enter Release Readiness", kanban)
+
+    def test_canonical_release_record_contract_and_identity(self) -> None:
+        template = (ROOT / "docs/releases/TEMPLATE.md").read_text()
+        kanban = (ROOT / "KANBAN.md").read_text()
+        for contract in (
+            "Record kind: `harness-owned release readiness`",
+            "Canonical path: `docs/releases/MVP-RELEASE.md`",
+            "## Frozen MVP and Checklist Snapshot",
+            "## Supported Platform and Runtime Claims",
+            "## Deterministic Release Commands and Cases",
+            "## Readiness and Rework Cycles",
+            "## Independent Evidence Review",
+            "## Separate Approval Authorities",
+            "Declared core smoke check: `RR-002`",
+        ):
+            self.assertIn(contract, template)
+        for check in range(1, 15):
+            self.assertGreaterEqual(template.count(f"RR-{check:03d}"), 2, "check must appear in snapshot and cycle table")
+        self.assertIn("create `docs/releases/MVP-RELEASE.md`", kanban)
+        self.assertIn("otherwise resume it", kanban)
+        self.assertIn("one canonical harness-owned record", kanban)
+        self.assertFalse((ROOT / "docs/releases/MVP-RELEASE.md").exists(), "distribution must not invent a live release record")
+        self.assertEqual([path.name for path in (ROOT / "docs/releases").glob("*.md")], ["TEMPLATE.md"])
+        for forbidden in ("# [FEATURE-ID]", "Source backlog item:", "Delivery profile:", "Acceptance route:"):
+            self.assertNotIn(forbidden, template)
+        self.assertIn("never receives a feature ID, backlog row, Kanban card", template)
+
+    def test_release_checks_have_closed_status_and_evidence_contracts(self) -> None:
+        template = (ROOT / "docs/releases/TEMPLATE.md").read_text()
+        status_line = next(line for line in template.splitlines() if "Every check row must use exactly" in line)
+        self.assertEqual(set(re.findall(r"`([^`]+)`", status_line)), {"pending", "pass", "fail", "blocked", "n/a"})
+        for requirement in (
+            "reproducible command or black-box case",
+            "date",
+            "exact environment",
+            "evidence reference",
+            "owner/next action",
+            "`n/a` also requires a concrete reason",
+            "Missing evidence is never a pass",
+        ):
+            self.assertIn(requirement, template)
+
+    def test_release_cycles_preserve_evidence_and_prepare_remediation(self) -> None:
+        template = (ROOT / "docs/releases/TEMPLATE.md").read_text()
+        kanban = (ROOT / "KANBAN.md").read_text()
+        for contract in (
+            "never overwrite or delete a completed, failed, or blocked cycle",
+            "#### Prepared Product Decisions",
+            "Failed Check ID",
+            "Proposed Remediation Scope",
+            "Recommended Backlog Item",
+            "Do not create the backlog item, feature record, MVP capability, or implementation",
+            "Affected checks to rerun",
+            "Required core smoke: `RR-002`",
+            "Broad-suite trigger",
+        ):
+            self.assertIn(contract, template)
+        self.assertIn("Never edit away failed or blocked cycles", kanban)
+        self.assertIn("link its record from the release Rework Cycle", kanban)
+        self.assertIn("resume readiness automatically after it reaches Done", kanban)
+
+    def test_release_authorities_are_explicit_and_independent(self) -> None:
+        template = (ROOT / "docs/releases/TEMPLATE.md").read_text()
+        mvp = (ROOT / "MVP.md").read_text()
+        authorities = (
+            "Feature Done approval(s):",
+            "Commit authorization:",
+            "Live or cost-bearing UAT authorization:",
+            "Ready-for-release-review determination:",
+            "Final MVP release approval:",
+            "Publish/deploy authorization:",
+        )
+        for authority in authorities:
+            self.assertIn(authority, template)
+            self.assertIn(authority, mvp)
+        self.assertIn("No value, transition, or approval in one field grants or implies any other", template)
+        self.assertIn("Never mark this MVP Released without the user's separate explicit", mvp)
+        self.assertIn("Never publish or deploy without separate", mvp)
+
+    def test_release_work_continues_until_a_real_authority_boundary(self) -> None:
+        kanban = (ROOT / "KANBAN.md").read_text()
+        for automatic_work in (
+            "evidence mapping",
+            "documentation consistency checks",
+            "deterministic release tooling",
+            "applicable guarded validation",
+        ):
+            self.assertIn(automatic_work, kanban)
+        for boundary in (
+            "material product/MVP/design/scope decision",
+            "cost authorization",
+            "permission",
+            "credential",
+            "safety decision",
+            "destructive action",
+            "unavailable environment",
+        ):
+            self.assertIn(boundary, kanban)
+        self.assertIn("Only reviewed passing release evidence permits", kanban)
+        self.assertIn("separate explicit Final MVP release approval", kanban)
 
 
 if __name__ == "__main__":

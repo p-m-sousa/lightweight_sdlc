@@ -16,13 +16,13 @@ Create or revise an approved product foundation conversationally. Expose tension
 
 Potential approved product deliverables are `PRODUCT_VISION.md`, Design System Project-Specific Additions, an optional storyboard, `BACKLOG.md`, and optional `MVP.md`, in that order. After Architect completes bootstrap, create a concise project-specific `README.md` from the approved product and technical foundation. Do not reopen unaffected artifacts.
 
-Do not edit architecture, Clean Code, Codex configuration, custom agents, Kanban, feature records, implementation, tests, or delivery evidence. `README.md` is the only non-product artifact this skill may write, and only as described below. Product approval never silently rescopes active Building/Testing work. Do not assign feature IDs.
+Do not edit architecture, Clean Code, Codex configuration, custom agents, Kanban, feature or release records, implementation, tests, or delivery evidence. `README.md` is the only non-product artifact this skill may write, and only as described below. Product approval never silently rescopes active Building/Testing work. Do not assign feature IDs.
 
 ## Runtime Gate and Repository Grounding
 
 Start in Codex Plan mode with `request_user_input`; otherwise ask the user to switch modes and invoke `$product-owner` again. Plan mode owns discovery, drafts, and approval and performs no project writes.
 
-Find the root containing `AGENTS.md`, Product Vision, Design System, and Backlog. Read those targets completely. For refinement, rescope, and new features, inspect only the implicated MVP, Kanban state, Architecture, Building/Testing/Done feature records, implementation, tests, and project README needed to resolve impact. Preserve real content and custom sections. The `Lightweight SDLC Agent Workflow` distribution README is harness documentation, not project content; replace it during bootstrap if it remains in a duplicated harness.
+Find the root containing `AGENTS.md`, Product Vision, Design System, and Backlog. Read those targets completely. For refinement, rescope, and new features, inspect only the implicated MVP, Kanban state, canonical release record, Architecture, Building/Testing/Done feature records, implementation, tests, and project README needed to resolve impact. A release record's Prepared Product Decision is evidence and a proposal, not authorization: present the product/MVP/scope decision normally and leave that record untouched. Preserve real content and custom sections. The `Lightweight SDLC Agent Workflow` distribution README is harness documentation, not project content; replace it during bootstrap if it remains in a duplicated harness.
 
 For observed feedback, classify it before drafting:
 
@@ -79,7 +79,7 @@ Inspect in every mode. Change only affected Backlog content and preserve aligned
 
 During bootstrap decide whether the product is pre-MVP. Later, change `MVP.md` only when the approved delta changes the minimum outcome, journey, inclusion, non-goals, or readiness checks.
 
-For pre-MVP, define the smallest meaningful outcome, core journey, exact included backlog capabilities, non-goals, applicable template readiness checks, and separate release-review/human-approval fields. Mark a check N/A only with a reason. Approve the complete file or replacement section.
+For pre-MVP, define the smallest meaningful outcome, core journey, exact included backlog capabilities, non-goals, applicable template readiness checks, and separate release-review/human-approval fields. Mark a check `n/a` only with a reason. Approve the complete file or replacement section.
 
 For post-MVP/no MVP during bootstrap, obtain explicit approval to delete the unused template. Preserve an existing absent-MVP decision unless the user adopts a new MVP stage.
 
@@ -106,7 +106,7 @@ When Architect is skipped, update an existing real project README only when the 
 After a completed bootstrap architecture pass, create or replace root `README.md` with a concise project orientation derived only from approved Product Vision, active/absent MVP, and finalized Architecture. Include:
 
 - project name, target user, purpose, and core outcome;
-- current MVP status and outcome when an MVP is active;
+- a `Current Status` section with current MVP status and outcome when an MVP is active;
 - a short system/toolchain summary;
 - exact setup, local-run, focused-validation, and applicable end-to-end commands from Architecture, preserving each command's Verified/Configured/Planned status and never claiming an unrun command passed;
 - links to Product Vision, MVP when active, Architecture, Backlog, Kanban, Clean Code, and Design System;

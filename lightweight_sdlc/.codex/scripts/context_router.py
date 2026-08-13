@@ -155,18 +155,22 @@ def add_section(blocks: list[Block], root: Path, relative: str, heading: str, *,
         blocks.append(Block(relative, heading, tuple(content), required))
 
 
-def resolve_feature(root: Path, feature: str) -> tuple[Path, str, list[str]]:
-    path = Path(feature)
+def resolve_record(root: Path, record: str, kind: str) -> tuple[Path, str, list[str]]:
+    path = Path(record)
     if not path.is_absolute():
         path = root / path
     try:
         relative = str(path.relative_to(root))
     except ValueError as exc:
-        raise SystemExit("Feature record must be inside the project root.") from exc
+        raise SystemExit(f"{kind.capitalize()} record must be inside the project root.") from exc
     lines = read_lines(path)
     if not lines:
-        raise SystemExit(f"Feature record is missing or empty: {relative}")
+        raise SystemExit(f"{kind.capitalize()} record is missing or empty: {relative}")
     return path, relative, lines
+
+
+def resolve_feature(root: Path, feature: str) -> tuple[Path, str, list[str]]:
+    return resolve_record(root, feature, "feature")
 
 
 def feature_fields(lines: list[str]) -> tuple[str, set[str]]:
@@ -273,11 +277,77 @@ def feature_blocks(root: Path, feature: str, phase: str) -> list[Block]:
     return blocks
 
 
-def build_packet(root: Path, phase: str, *, item: str | None = None, feature: str | None = None, budget: int = DEFAULT_BUDGET) -> str:
+def release_blocks(root: Path, release: str) -> list[Block]:
+    _, relative, lines = resolve_record(root, release, "release")
+    blocks: list[Block] = [Block(relative, "release record metadata", tuple(preamble(lines)), True)]
+
+    for heading in (
+        "Frozen MVP and Checklist Snapshot",
+        "Supported Platform and Runtime Claims",
+        "Deterministic Release Commands and Cases",
+    ):
+        content = section(lines, heading)
+        if content:
+            blocks.append(Block(relative, heading, tuple(content)))
+
+    recent = latest_subsections(lines, "Readiness and Rework Cycles", ("Readiness Cycle", "Rework Cycle"))
+    if recent:
+        blocks.append(Block(relative, "latest readiness and rework cycles", tuple(recent)))
+    for heading in ("Independent Evidence Review", "Separate Approval Authorities"):
+        content = section(lines, heading)
+        if content:
+            blocks.append(Block(relative, heading, tuple(content)))
+
+    mvp = read_lines(root / "MVP.md")
+    if mvp:
+        blocks.append(Block("MVP.md", "active MVP metadata", tuple(preamble(mvp)), True))
+        for heading in ("Release Readiness", "Release Approval"):
+            content = section(mvp, heading)
+            if content:
+                blocks.append(Block("MVP.md", heading, tuple(content)))
+
+    commands = matching_rows(
+        read_lines(root / "ARCHITECTURE.md"),
+        (
+            "Setup",
+            "Build",
+            "Run locally",
+            "Full automated regression",
+            "Feature-specific end-to-end",
+            "Full end-to-end regression",
+            "Deterministic release/package",
+            "Publish/deploy",
+        ),
+    )
+    if commands:
+        blocks.append(Block("ARCHITECTURE.md", "release command rows", tuple(commands)))
+
+    readme = read_lines(root / "README.md")
+    for heading in ("Current Status", "Status", "MVP Status", "Release Status"):
+        content = section(readme, heading)
+        if content:
+            blocks.append(Block("README.md", "current-status documentation", tuple(content)))
+            break
+    return blocks
+
+
+def build_packet(
+    root: Path,
+    phase: str,
+    *,
+    item: str | None = None,
+    feature: str | None = None,
+    release: str | None = None,
+    budget: int = DEFAULT_BUDGET,
+) -> str:
     if phase == "plan":
         if not item:
             raise ValueError("Plan requires an item.")
         blocks = plan_blocks(root, item)
+    elif phase == "release":
+        if not release:
+            raise ValueError("Release requires a release record.")
+        blocks = release_blocks(root, release)
     else:
         if not feature:
             raise ValueError(f"{phase.capitalize()} requires a feature.")
@@ -287,16 +357,19 @@ def build_packet(root: Path, phase: str, *, item: str | None = None, feature: st
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("plan", "build", "review", "uat"))
+    parser.add_argument("phase", choices=("plan", "build", "review", "uat", "release"))
     parser.add_argument("--item", help="Exact backlog item name for Plan.")
     parser.add_argument("--feature", help="Feature-record path for Build, Review, or UAT.")
+    parser.add_argument("--release", help="Harness-owned release-record path for Release.")
     parser.add_argument("--root", type=Path, help="Project root; defaults to discovery from the current directory.")
     parser.add_argument("--budget-chars", type=int, default=DEFAULT_BUDGET, help="Soft packet character budget.")
     args = parser.parse_args()
     if args.phase == "plan" and not args.item:
         parser.error("Plan requires --item.")
-    if args.phase != "plan" and not args.feature:
+    if args.phase in {"build", "review", "uat"} and not args.feature:
         parser.error(f"{args.phase.capitalize()} requires --feature.")
+    if args.phase == "release" and not args.release:
+        parser.error("Release requires --release.")
     if args.budget_chars < 1000:
         parser.error("--budget-chars must be at least 1000.")
     return args
@@ -305,7 +378,23 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     root = args.root.resolve() if args.root else find_root(Path.cwd().resolve())
-    print(build_packet(root, args.phase, item=args.item, feature=args.feature, budget=args.budget_chars), end="")
+    if args.phase == "release":
+        requested = Path(args.release)
+        requested = requested.resolve() if requested.is_absolute() else (root / requested).resolve()
+        canonical = (root / "docs/releases/MVP-RELEASE.md").resolve()
+        if requested != canonical:
+            raise SystemExit("Release packet requires canonical record docs/releases/MVP-RELEASE.md.")
+    print(
+        build_packet(
+            root,
+            args.phase,
+            item=args.item,
+            feature=args.feature,
+            release=args.release,
+            budget=args.budget_chars,
+        ),
+        end="",
+    )
 
 
 if __name__ == "__main__":

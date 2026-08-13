@@ -80,6 +80,8 @@ Guarded command: record the raw target syntax below, but execute every test as `
 | Full automated regression | `[exact command or N/A]` | [path] | [Verified / Configured / Planned] | Only an `AGENTS.md` broad-suite trigger or explicit release gate |
 | Feature-specific end-to-end / UAT | `[exact target-selection syntax or N/A]` | [path] | [Verified / Configured / Planned] | Recorded feature cases when an executable journey or integration boundary applies |
 | Full end-to-end regression | `[exact command or N/A]` | [path] | [Verified / Configured / Planned] | Only an `AGENTS.md` end-to-end trigger or explicit release gate |
+| Deterministic release/package | `[exact local no-publish command or N/A]` | [path] | [Verified / Configured / Planned] | Release readiness; produce locally inspectable output only |
+| Publish/deploy | `[exact command or N/A]` | [path] | [Verified / Configured / Planned] | Execute only with separate explicit publish/deploy authorization |
 
 ## Decisions and Deferred Questions
 
