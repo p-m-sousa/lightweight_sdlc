@@ -1,0 +1,72 @@
+# Delegated authority table.
+#
+# This is the single declared source for the model and reasoning effort each
+# delegated role runs at. Authority belongs to the agent definition, never to
+# the spawn call: any attribute a caller must remember to pass is a silent
+# fallback to the runtime default that looks identical to a correct run.
+#
+# What an adopting project fills in:
+#
+# 1. Replace every `[BRACKETED]` value under `[models]` with a real model
+#    identifier from your runtime. Two entries may hold the same identifier.
+# 2. Replace the same placeholders in `.codex/config.toml` and in every
+#    `.codex/agents/*.toml` definition.
+# 3. Rename the `[routes.review]` keys if your feature records use different
+#    route vocabulary, keeping each value pointing at a real agent name.
+#
+# `.codex/tests/test_harness_contract.py` fails until every agent definition
+# matches this table exactly, so a role cannot silently drop to the default.
+
+[models]
+primary = "[PRIMARY_MODEL]"
+subagent = "[SUBAGENT_MODEL]"
+elevated = "[ELEVATED_MODEL]"
+
+# Each role names a key from [models] plus its own reasoning effort. Roles whose
+# authority varies by delivery profile are separate agents, one per authority
+# level, never one agent plus a remembered override.
+[roles]
+planner = { model = "subagent", effort = "medium" }
+reviewer-standard = { model = "subagent", effort = "high" }
+reviewer-deep = { model = "elevated", effort = "high" }
+uat = { model = "subagent", effort = "medium" }
+architect = { model = "elevated", effort = "high" }
+
+# Route vocabulary is project vocabulary. Feature records declare a review route;
+# this maps each accepted value to the agent that must run it. Add aliases here
+# when a project already uses other route names instead of editing audit logic.
+[routes.review]
+reviewer-standard = "reviewer-standard"
+reviewer-deep = "reviewer-deep"
+
+# Process documents name agents only. A model or effort named in prose is drift
+# waiting to happen: the prose and the definition diverge silently and the
+# definition is what actually runs.
+[document_guard]
+documents = ["AGENTS.md", "KANBAN.md"]
+forbidden_patterns = [
+  "(?i)\\bgpt-\\S+",
+  "(?i)\\b(terra|sol|luna)\\b",
+  "(?i)\\breasoning[ -]effort\\b",
+  "(?i)\\b(minimal|low|medium|high|xhigh)[ -]effort\\b",
+  "(?i)\\bat (minimal|low|medium|high|xhigh)\\b",
+  "(?i)\\bmodel/effort\\b",
+]
+
+# The runtime already records the role, the model, the effort, and the token
+# usage of every session it ran. The audit harvests those rollout logs; it
+# instruments nothing new.
+[sessions]
+directory = "~/.codex/sessions"
+glob = "**/rollout-*.jsonl"
+# Attribution is exact or absent. A delegate names its assigned record when it
+# generates the phase packet, so that command identifies the unit. Matching bare
+# record mentions instead would attribute a session to every record it happened
+# to read, which is a guess dressed up as evidence.
+unit_pattern = "context_router\\.py\\s+\\w+\\s+--feature\\s+\\S*?(FEAT-[0-9]{3})\\.md"
+
+# Session roles the compliance mode treats as review sessions. Add a legacy
+# agent name here when older history recorded one combined reviewer, so the
+# audit can still read it without special-casing vocabulary in code.
+[audit]
+review_roles = ["reviewer-standard", "reviewer-deep"]

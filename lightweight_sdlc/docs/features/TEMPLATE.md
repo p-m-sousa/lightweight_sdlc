@@ -7,7 +7,7 @@
 - Delivery profile: [standard / deep]
 - Surface tags: [web-ui / web-api / ios / agentic-ai / data / integration / internal]
 - Planning route: [builder / delegated]
-- Review route: [terra-high / sol-high]
+- Review route: [reviewer-standard / reviewer-deep]
 - Acceptance route: [builder / independent-uat]
 
 ## Transition History
@@ -47,7 +47,7 @@
 
 ### Review Cycle 1
 
-- Model and effort: [Terra High / Sol High]
+- Review agent: [reviewer-standard / reviewer-deep]
 - Verdict: [ready for Testing / ready with proposed follow-ups / fix before Testing / blocked]
 - Findings and dispositions: [Evidence-backed Blocking, Should fix, Track, and useful FYI items / None.]
 - Fix verification: [Focused result / N/A]
@@ -87,7 +87,7 @@ Remove this unused placeholder when the first acceptance pass succeeds.
 
 ## Efficiency and Final Disposition
 
-- Roles and model/effort used: [Builder; optional Planner; Reviewer; optional UAT.]
+- Roles used: [Builder; optional `planner`; review agent; optional `uat`.]
 - Review cycles: [N]
 - Acceptance cycles: [N]
 - Usage: [Credits/tokens when exposed / Unavailable]

@@ -7,7 +7,7 @@
 - Delivery profile: deep
 - Surface tags: web-ui, web-api, agentic-ai, integration
 - Planning route: delegated
-- Review route: sol-high
+- Review route: reviewer-deep
 - Acceptance route: independent-uat
 
 ## Scope and Plan
@@ -43,7 +43,7 @@
 
 ### Review Cycle 1
 
-- Model and effort: Sol High
+- Review agent: reviewer-deep
 - Verdict: Pending
 - Findings and dispositions: Pending
 - Fix verification: N/A

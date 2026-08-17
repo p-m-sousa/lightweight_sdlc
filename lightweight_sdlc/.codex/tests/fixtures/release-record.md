@@ -71,7 +71,7 @@
 
 ## Independent Evidence Review
 
-- Reviewer and effort: Independent Reviewer, Terra High
+- Review agent: reviewer-deep
 - Date and exact environment/revision reviewed: 2026-08-12 — fixture-tree
 - Verdict: evidence complete
 - Evidence reference and findings: fixture review evidence

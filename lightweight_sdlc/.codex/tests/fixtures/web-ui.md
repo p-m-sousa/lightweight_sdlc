@@ -7,7 +7,7 @@
 - Delivery profile: standard
 - Surface tags: web-ui
 - Planning route: builder
-- Review route: terra-high
+- Review route: reviewer-standard
 - Acceptance route: independent-uat
 
 ## Scope and Plan
@@ -40,7 +40,7 @@
 
 ### Review Cycle 1
 
-- Model and effort: Terra High
+- Review agent: reviewer-standard
 - Verdict: ready for Testing
 - Findings and dispositions: None
 - Fix verification: N/A

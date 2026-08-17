@@ -1,6 +1,6 @@
 name = "architect"
 description = "Workspace-write architect for bootstrap and architecture-relevant approved refinement, rescope, or new-feature product changes."
-model = "gpt-5.6-sol"
+model = "[ELEVATED_MODEL]"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 tool_output_token_limit = 12000

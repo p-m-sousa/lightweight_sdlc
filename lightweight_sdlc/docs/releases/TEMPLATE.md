@@ -112,9 +112,9 @@ Remove this unused placeholder when no rework occurs. Otherwise retain it perman
 
 ## Independent Evidence Review
 
-After RR-001 through RR-013 have no `pending`, `fail`, or `blocked`, give an independent Reviewer the release context packet with `pass_type=release-evidence`. Record its evidence-backed verdict in a new Readiness Cycle as RR-014. Only a `pass` permits the ready-for-release-review determination.
+After RR-001 through RR-013 have no `pending`, `fail`, or `blocked`, give independent `reviewer-deep` the release context packet with `pass_type=release-evidence`. Record its evidence-backed verdict in a new Readiness Cycle as RR-014. Only a `pass` permits the ready-for-release-review determination.
 
-- Reviewer and effort: [Independent Reviewer, model/effort]
+- Review agent: [`reviewer-deep`]
 - Date and exact environment/revision reviewed: [YYYY-MM-DD — details]
 - Verdict: [evidence complete / fix evidence before determination / blocked]
 - Evidence reference and findings: [Exact references / None]

@@ -18,16 +18,16 @@ Use `deep` for auth/privacy/security, destructive behavior, payments, schemas/mi
 
 | Profile | Planning | Review | Acceptance |
 | --- | --- | --- | --- |
-| `standard` | Primary builder | Independent `reviewer`, Terra High | Builder only when no meaningful black-box journey exists; otherwise independent `uat` |
-| `deep` | Independent `planner`, Terra Medium | Independent `reviewer`, Sol High | Independent `uat`, Terra Medium |
+| `standard` | Primary builder | Independent `reviewer-standard` | Builder only when no meaningful black-box journey exists; otherwise independent `uat` |
+| `deep` | Independent `planner` | Independent `reviewer-deep` | Independent `uat` |
 
 Independent UAT covers user-visible/navigation/responsive/accessibility, persistence, permissions, integrations, AI, and executable iOS behavior. Builder acceptance is limited to work without a meaningful user journey.
 
-If standard review discovers a deep trigger, obtain focused Sol-High reviewer clearance before Testing. Reuse the same reviewer for fixes and the same UAT agent for retests.
+If standard review discovers a deep trigger, obtain focused `reviewer-deep` clearance before Testing. Reuse the same reviewer agent for fixes and the same UAT agent for retests.
 
 ## Delegation
 
-- Spawn roles with `fork_turns="none"`. Planner/Reviewer/UAT receive only root, item/feature or release path, profile, tags, and pass type; Architect receives its role-defined product handoff.
+- Spawn roles by agent name with `fork_turns="none"`; never pass authority, which each definition pins itself. Planner/Reviewer/UAT receive only root, item/feature or release path, profile, tags, and pass type; Architect receives its role-defined product handoff.
 - Builder self-review never replaces the Reviewer.
 - Delegates never install or request tool approval. Preflight tools, dependencies, and access; use an equivalent in-scope fallback or immediately return the exact `blocked` condition.
 - After 15 silent minutes request status, repeat after 10, then interrupt after 5; inspect write scope before one replacement.

@@ -1,4 +1,6 @@
-model = "gpt-5.6-sol"
+# Model identifiers are declared once in `.codex/authority.toml`. Replace each
+# placeholder below with the matching real identifier when adopting the harness.
+model = "[PRIMARY_MODEL]"
 model_reasoning_effort = "medium"
 plan_mode_reasoning_effort = "high"
 project_doc_max_bytes = 12288
@@ -9,6 +11,6 @@ collaboration_modes = true
 [agents]
 max_concurrent_threads_per_session = 2
 max_depth = 1
-default_subagent_model = "gpt-5.6-terra"
+default_subagent_model = "[SUBAGENT_MODEL]"
 default_subagent_reasoning_effort = "medium"
 interrupt_message = false

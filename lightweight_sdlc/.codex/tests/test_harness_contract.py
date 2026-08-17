@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
 
 
 ROOT = Path(__file__).resolve().parents[2]
+DELEGATED_ROLES = ("planner", "reviewer-standard", "reviewer-deep", "uat", "architect")
 
 
 class HarnessContractTests(unittest.TestCase):
@@ -19,29 +21,140 @@ class HarnessContractTests(unittest.TestCase):
         with (ROOT / relative).open("rb") as handle:
             return tomllib.load(handle)
 
+    def authority(self) -> dict:
+        return self.load_toml(".codex/authority.toml")
+
     def test_configuration_and_dynamic_routing(self) -> None:
+        authority = self.authority()
         config = self.load_toml(".codex/config.toml")
-        self.assertEqual(config["model"], "gpt-5.6-sol")
+        self.assertEqual(config["model"], authority["models"]["primary"])
         self.assertEqual(config["model_reasoning_effort"], "medium")
         self.assertEqual(config["plan_mode_reasoning_effort"], "high")
-        self.assertEqual(config["agents"]["default_subagent_model"], "gpt-5.6-terra")
+        self.assertEqual(config["agents"]["default_subagent_model"], authority["models"]["subagent"])
         self.assertNotIn("max_threads", config["agents"])
         self.assertNotEqual(config.get("service_tier"), "fast")
 
-        for name in ("planner", "reviewer", "uat"):
+    def test_delegated_authority_is_pinned_in_every_agent_definition(self) -> None:
+        # Inverted deliberately. This assertion previously required `model` and
+        # `model_reasoning_effort` to be ABSENT from the role definitions, which
+        # made the runtime default the real authority and made the documented
+        # review route unenforceable: effort was chosen per spawn from prose, so
+        # a forgotten attribute produced a cheaper review that looked identical
+        # to a correct one. Authority now belongs to the definition, and this
+        # test pins the exact expected value per role.
+        authority = self.authority()
+        models = authority["models"]
+        for name in DELEGATED_ROLES:
+            declared = authority["roles"][name]
             role = self.load_toml(f".codex/agents/{name}.toml")
-            self.assertNotIn("model", role)
-            self.assertNotIn("model_reasoning_effort", role)
+            self.assertEqual(role["name"], name, f"{name} definition must declare its own agent name")
+            self.assertEqual(
+                role["model"],
+                models[declared["model"]],
+                f"{name} must pin the model declared for it in .codex/authority.toml",
+            )
+            self.assertEqual(
+                role["model_reasoning_effort"],
+                declared["effort"],
+                f"{name} must pin the reasoning effort declared for it in .codex/authority.toml",
+            )
             self.assertIn("tool_output_token_limit", role)
-        architect = self.load_toml(".codex/agents/architect.toml")
-        self.assertEqual(architect["model_reasoning_effort"], "high")
+
+    def test_authority_levels_are_separate_agents_with_identical_behavior(self) -> None:
+        # Routing by agent name replaces "one agent plus a remembered override".
+        # The two definitions may differ only in authority, so behavior cannot
+        # drift between the profiles that select them.
+        authority = self.authority()
+        agents = set(authority["routes"]["review"].values())
+        self.assertEqual(agents, {"reviewer-standard", "reviewer-deep"})
+        standard = self.load_toml(".codex/agents/reviewer-standard.toml")
+        deep = self.load_toml(".codex/agents/reviewer-deep.toml")
+        self.assertEqual(
+            standard["developer_instructions"],
+            deep["developer_instructions"],
+            "review agents must be byte-identical in behavior; only authority may differ",
+        )
+        self.assertEqual(standard["sandbox_mode"], deep["sandbox_mode"])
+        self.assertEqual(standard["tool_output_token_limit"], deep["tool_output_token_limit"])
+        self.assertNotEqual(standard["model"], deep["model"])
+        self.assertFalse((ROOT / ".codex/agents/reviewer.toml").exists(), "the overridable single reviewer is gone")
+
+    def test_process_documents_name_agents_not_models_or_efforts(self) -> None:
+        # A model named in prose is drift waiting to happen: the prose and the
+        # definition diverge silently, and the definition is what actually runs.
+        authority = self.authority()
+        patterns = [re.compile(pattern) for pattern in authority["document_guard"]["forbidden_patterns"]]
+        placeholders = [re.escape(value) for value in authority["models"].values()]
+        patterns.append(re.compile("|".join(placeholders)))
+        for relative in authority["document_guard"]["documents"]:
+            content = (ROOT / relative).read_text()
+            for pattern in patterns:
+                found = pattern.search(content)
+                self.assertIsNone(
+                    found,
+                    f"{relative} names an authority identifier {found.group(0)!r}; name the agent instead"
+                    if found
+                    else "",
+                )
 
     def test_prompt_size_guardrails(self) -> None:
         self.assertLessEqual(len((ROOT / "AGENTS.md").read_text()), 6000)
-        ceilings = {"planner": 2400, "reviewer": 3000, "uat": 3000, "architect": 8000}
+        ceilings = {"planner": 2400, "reviewer-standard": 3000, "reviewer-deep": 3000, "uat": 3000, "architect": 8000}
         for name, ceiling in ceilings.items():
             instructions = self.load_toml(f".codex/agents/{name}.toml")["developer_instructions"]
             self.assertLessEqual(len(instructions), ceiling, f"{name} prompt exceeds its ceiling")
+
+    def test_sections_injected_into_every_packet_stay_capped(self) -> None:
+        # These sections bypass the packet budget, so every delivery turn in
+        # every phase that routes them pays for them. Operational detail belongs
+        # in a document the packet points at, not in a section it pastes.
+        ceilings = {
+            ("PRODUCT_VISION.md", "North Star"): 400,
+            ("PRODUCT_VISION.md", "Trust Promise"): 600,
+            ("PRODUCT_VISION.md", "Decision Filter"): 900,
+            ("MVP.md", "MVP Outcome"): 500,
+        }
+        for (relative, heading), ceiling in ceilings.items():
+            content = (ROOT / relative).read_text()
+            match = re.search(rf"^##\s+{re.escape(heading)}\s*$(.*?)(?=^##\s|\Z)", content, re.MULTILINE | re.DOTALL)
+            self.assertIsNotNone(match, f"{relative} lost its {heading} section")
+            size = len(match.group(0))
+            self.assertLessEqual(
+                size,
+                ceiling,
+                f"{relative} :: {heading} is {size} chars against a {ceiling} ceiling. This section is injected"
+                " into every packet that routes it and is paid on every delivery turn; move the operational"
+                f" detail into a document the packet points at and leave a short statement in {relative}.",
+            )
+
+    def test_authority_baseline_is_explicit_and_shrink_only(self) -> None:
+        baseline = json.loads((ROOT / ".codex/authority_baseline.json").read_text())
+        entries = baseline["accepted_violations"]
+        cap = baseline["max_entries"]  # the cap derives from the file, never a literal count
+        self.assertGreaterEqual(cap, 0)
+        self.assertLessEqual(len(entries), cap, "baseline grew past its own declared cap")
+        self.assertEqual(
+            len(entries),
+            cap,
+            "ratchet max_entries down to the gaps actually accepted; raising it must be an explicit, reviewable edit",
+        )
+        for entry in entries:
+            self.assertEqual({"kind", "subject", "role", "observed", "reason"}, set(entry))
+        # Distribution-only: an adopting project that accepts a real gap edits
+        # this assertion in the same reviewable change. Never seed the shipped
+        # baseline with any project's history.
+        self.assertEqual(entries, [], "the distributed baseline ships empty")
+
+    def test_authority_audit_harvests_existing_logs_without_new_instrumentation(self) -> None:
+        authority = self.authority()
+        audit = (ROOT / ".codex/scripts/authority_audit.py").read_text()
+        self.assertIn("directory", authority["sessions"])
+        self.assertIn("glob", authority["sessions"])
+        self.assertIn("review_roles", authority["audit"])
+        self.assertIn("agent_role", audit)
+        self.assertIn("total_token_usage", audit)
+        for mode in ("compliance", "usage"):
+            self.assertIn(mode, audit)
 
     def test_single_feature_record_contract(self) -> None:
         template = (ROOT / "docs/features/TEMPLATE.md").read_text()
@@ -61,8 +174,8 @@ class HarnessContractTests(unittest.TestCase):
                 self.assertIn(state, content, f"{state} missing from {relative}")
         kanban = (ROOT / "KANBAN.md").read_text()
         self.assertIn('fork_turns="none"', kanban)
-        self.assertIn("Terra High", kanban)
-        self.assertIn("Sol High", kanban)
+        self.assertIn("reviewer-standard", kanban)
+        self.assertIn("reviewer-deep", kanban)
 
     def test_removed_review_artifacts_have_no_references(self) -> None:
         forbidden = ("docs/code-reviews", "triage-log.md", "review archive")
@@ -74,15 +187,17 @@ class HarnessContractTests(unittest.TestCase):
                 self.assertNotIn(value.casefold(), content, f"stale review artifact reference in {path}")
 
     def test_example_routes(self) -> None:
+        routes = self.authority()["routes"]["review"]
         expected = {
-            "web-ui.md": ("standard", "builder", "terra-high", "independent-uat"),
-            "agentic-ai.md": ("deep", "delegated", "sol-high", "independent-uat"),
-            "ios.md": ("deep", "delegated", "sol-high", "independent-uat"),
+            "web-ui.md": ("standard", "builder", "reviewer-standard", "independent-uat"),
+            "agentic-ai.md": ("deep", "delegated", "reviewer-deep", "independent-uat"),
+            "ios.md": ("deep", "delegated", "reviewer-deep", "independent-uat"),
         }
         for fixture, values in expected.items():
             content = (ROOT / ".codex/tests/fixtures" / fixture).read_text()
             for value in values:
                 self.assertIn(value, content)
+            self.assertIn(values[2], routes, "every example review route must resolve through the route table")
 
     def test_product_owner_creates_project_readme_after_architecture(self) -> None:
         skill = (ROOT / ".agents/skills/product-owner/SKILL.md").read_text()
@@ -142,7 +257,7 @@ class HarnessContractTests(unittest.TestCase):
         self.assertIn("If planning is blocked, leave the item in Backlog", kanban)
         self.assertIn("If review is blocked, remain in Building", kanban)
 
-        for name in ("planner", "reviewer", "uat", "architect"):
+        for name in DELEGATED_ROLES:
             instructions = self.load_toml(f".codex/agents/{name}.toml")["developer_instructions"]
             for contract in (
                 "preflight the tools, dependencies, permissions, credentials",

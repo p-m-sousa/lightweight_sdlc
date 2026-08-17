@@ -1,5 +1,7 @@
 name = "uat"
 description = "Adaptive workspace-write black-box tester for features requiring independent acceptance."
+model = "[SUBAGENT_MODEL]"
+model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 tool_output_token_limit = 6000
 developer_instructions = """

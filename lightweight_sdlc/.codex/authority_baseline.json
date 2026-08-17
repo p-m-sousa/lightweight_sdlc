@@ -1,0 +1,13 @@
+{
+  "_comment": [
+    "Accepted authority-compliance gaps. Each entry is an object with `kind`",
+    "(authority | route), `subject`, `role`, `observed`, and a `reason`.",
+    "Shrink-only: `max_entries` is the cap the contract test reads, and it must",
+    "always equal the number of entries below. Removing an accepted gap lowers",
+    "both. Accepting a new one raises both, which is an explicit, reviewable edit",
+    "rather than silent drift.",
+    "This distribution ships empty. Never seed it with any project's history."
+  ],
+  "max_entries": 0,
+  "accepted_violations": []
+}

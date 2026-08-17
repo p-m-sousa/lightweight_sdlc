@@ -14,6 +14,8 @@ One backlog selection authorizes the agent-owned loop through passing acceptance
 
 This distribution contains reusable, uninstantiated process templates. A copied project records real MVP/release status in `MVP.md`, its project README, and the single harness-owned `docs/releases/MVP-RELEASE.md` created automatically when eligible.
 
+The bundled Python scripts and contract tests require Python 3.11 or newer.
+
 ## What the Harness Preserves
 
 - Explicit Product Owner bootstrap, proportional in-flight refinement, pivot/rescope, and new-feature discovery with approved Product Vision, design direction, Backlog, and optional MVP.
@@ -31,14 +33,14 @@ Every feature is classified before Building:
 
 | Profile | Planning | Review | Acceptance |
 | --- | --- | --- | --- |
-| `standard` | Primary builder | Independent Terra-High Reviewer | Builder only without a meaningful black-box journey; otherwise Terra-Medium UAT |
-| `deep` | Terra-Medium Planner | Independent Sol-High Reviewer | Terra-Medium UAT |
+| `standard` | Primary builder | Independent `reviewer-standard` | Builder only without a meaningful black-box journey; otherwise independent `uat` |
+| `deep` | Independent `planner` | Independent `reviewer-deep` | Independent `uat` |
 
 Deep triggers include auth/security/privacy, schemas or migrations, persistence guarantees, public contracts, shared configuration/state/concurrency, payments or consequential integrations, architecture boundaries, agent/model/tool orchestration, prompt-injection and untrusted-output boundaries, AI evaluations/cost/autonomy, and new iOS subsystems or platform integrations. Uncertainty defaults to deep.
 
 Independent UAT is required for user-visible behavior, navigation, responsive/accessibility behavior, persistence, permissions, integrations, AI-generated or AI-executed behavior, and executable iOS behavior.
 
-The primary builder uses GPT-5.6 Sol at Medium. Product Owner work uses Plan-mode High. Architect uses Sol High. Default subagents use Terra Medium; review is explicitly spawned at Terra High or Sol High according to profile. Standard speed is required because Fast mode consumes usage faster.
+Every delegated role pins its own model and reasoning effort in its own definition file, from the single table in `.codex/authority.toml`. Nothing about authority is passed at spawn time: an attribute a caller must remember to pass is a silent fallback to the runtime default that produces a cheaper result looking identical to a correct one. Where authority varies by profile, there is one agent per authority level rather than one agent plus a remembered override, and a contract test asserts their behavioral instructions stay byte-identical so only authority differs. Process documents name agents only. Standard speed is required because Fast mode consumes usage faster.
 
 All custom agents start with `fork_turns="none"` and a compact repository-backed assignment instead of inherited interview and implementation history. Each role preflights required capabilities, uses an equivalent in-scope workaround when available, and otherwise returns an immediate precise blocker; subagents never install dependencies or issue tool approval requests. The same Reviewer and UAT threads are reused for focused rework.
 
@@ -56,10 +58,13 @@ All custom agents start with `fork_turns="none"` and a compact repository-backed
 | Path | Purpose |
 | --- | --- |
 | [AGENTS.md](AGENTS.md) | Always-on authority, risk routing, delegation, and validation rules. |
-| [.codex/config.toml](.codex/config.toml) | Builder and subagent model/effort defaults and concurrency limits. |
-| [.codex/agents/](.codex/agents/) | Architect, conditional Planner, mandatory Reviewer, and adaptive UAT definitions. |
+| [.codex/authority.toml](.codex/authority.toml) | The one declared authority table: model and effort per role, review-route vocabulary, document guard, and session-log location. |
+| [.codex/config.toml](.codex/config.toml) | Primary-thread and default subagent authority plus concurrency limits. |
+| [.codex/authority_baseline.json](.codex/authority_baseline.json) | Explicit, shrink-only accepted-gap baseline for the compliance audit; ships empty. |
+| [.codex/agents/](.codex/agents/) | Architect, conditional Planner, the two mandatory Reviewer authority levels, and adaptive UAT definitions, each pinning its own authority. |
 | [.codex/scripts/context_router.py](.codex/scripts/context_router.py) | Read-only, profile-aware, budgeted phase context packets. |
 | [.codex/scripts/test_guard.py](.codex/scripts/test_guard.py) | Deterministic host/container resource detection and guarded test execution. |
+| [.codex/scripts/authority_audit.py](.codex/scripts/authority_audit.py) | Detective control over recorded session logs: authority compliance and token usage. |
 | [.codex/tests/](.codex/tests/) | Static contracts and representative web, agentic-AI, iOS, and release router fixtures. |
 | [.agents/skills/product-owner/](.agents/skills/product-owner/) | Product discovery, approvals, backlog, and MVP workflow. |
 | [PRODUCT_VISION.md](PRODUCT_VISION.md) | North Star, trust promise, principles, and Decision Filter. |
@@ -73,7 +78,41 @@ All custom agents start with `fork_turns="none"` and a compact repository-backed
 | [docs/releases/TEMPLATE.md](docs/releases/TEMPLATE.md) | Canonical harness-owned MVP release-readiness record contract. |
 | [UI_TWEAKS.md](UI_TWEAKS.md) | User-approved lightweight UI polish. |
 
-The `.codex/tests/` suite verifies configuration, prompt ceilings, lifecycle/release contracts, packet behavior, Git-state reporting, and representative web UI, agentic web app, iOS, and release-readiness routes.
+The `.codex/tests/` suite verifies configuration, pinned authority, prompt and injected-section ceilings, lifecycle/release contracts, packet behavior, Git-state reporting, the audit's compliance and usage modes, and representative web UI, agentic web app, iOS, and release-readiness routes. Run it from the copied harness root with Python 3.11 or newer:
+
+```bash
+python3 -m unittest discover -s .codex/tests -p 'test_*.py'
+```
+
+## Delegated Authority
+
+The distribution ships no model identifiers. `.codex/authority.toml` declares three placeholders — `[PRIMARY_MODEL]`, `[SUBAGENT_MODEL]`, and `[ELEVATED_MODEL]` — and maps every role to one of them plus a reasoning effort:
+
+| Agent | Model | Effort |
+| --- | --- | --- |
+| `planner` | `[SUBAGENT_MODEL]` | medium |
+| `reviewer-standard` | `[SUBAGENT_MODEL]` | high |
+| `reviewer-deep` | `[ELEVATED_MODEL]` | high |
+| `uat` | `[SUBAGENT_MODEL]` | medium |
+| `architect` | `[ELEVATED_MODEL]` | high |
+
+An adopting project replaces each placeholder with a real model identifier from its runtime, in `.codex/authority.toml`, `.codex/config.toml`, and each `.codex/agents/*.toml` definition. Two placeholders may resolve to the same identifier. The contract suite fails until every definition matches the table, so a role cannot quietly fall back to the runtime default.
+
+Review-route vocabulary is project vocabulary: `[routes.review]` maps each accepted `Review route:` value in a feature record to the agent that must run it. Rename its keys freely and keep the values pointing at real agents; the audit reads that table instead of hard-coding route names.
+
+### Auditing What Actually Ran
+
+Pinned definitions are the preventive control. The detective control behind them reads the rollout logs the runtime already writes — role, model, effort, and token usage per session — and instruments nothing new:
+
+```bash
+python3 -B .codex/scripts/authority_audit.py --mode compliance
+```
+
+Compliance checks two things. Every configured review session must have run at its role's declared authority, which needs no feature correlation and is exact. For a session attributed to a `FEAT-XXX` record whose current review route exists in `[routes.review]`, the recorded agent must also match that route. Attribution is exact or absent: a delegate names its assigned feature record when it generates the phase packet, and a session without that command is reported as unattributed rather than guessed at from record mentions.
+
+Use `--mode usage` for input, cached-input, and output tokens rolled up by role and by attributable feature; all other sessions are grouped as unattributed.
+
+A fresh copy has no session history, so the audit reports `no history` and exits 0 — absence of evidence never fails a new project. Accepted gaps go in `.codex/authority_baseline.json`, which is shrink-only: its `max_entries` cap must always equal the number of entries, so accepting a gap is an explicit, reviewable edit and accidental growth fails the contract suite. The shipped baseline is empty and must never be seeded with a project's history.
 
 ## Copy Into a Project
 
@@ -81,10 +120,11 @@ You may duplicate and rename the full harness folder, including hidden `.codex`,
 
 Then:
 
+0. Confirm Python 3.11 or newer is available, replace the model placeholders described under Delegated Authority, and run the contract-test command above to confirm the table and definitions agree.
 1. Start a Codex task in Plan mode and explicitly invoke `$product-owner`.
 2. Approve Product Vision, product-specific design direction, Backlog, optional storyboard, and MVP decision.
 3. When requested, switch out of Plan mode and reply `Write the approved product changes and complete the product handoff.`
-4. Product Owner writes only approved product artifacts and spawns Architect at Sol High without inherited conversation history.
+4. Product Owner writes only approved product artifacts and spawns `architect` without inherited conversation history.
 5. Resolve only a required new cost commitment if Architect identifies one.
 6. Product Owner creates the project README from the approved product foundation and finalized architecture.
 7. Confirm all retained templates were adapted and architecture records exact focused and broad validation plus browser/Simulator/API acceptance paths.
@@ -105,11 +145,11 @@ The primary builder plans standard work. Deep work receives an independent Plann
 
 The builder creates the next `FEAT-XXX` record, updates the linked board card and active MVP when applicable, implements the smallest approved behavior, updates stale README sections, and records focused checks once. Each record states the README impact or why no update was needed.
 
-Every feature receives independent review. Standard work uses Terra High; deep work uses Sol High. A deep trigger found during standard review promotes the record and requires focused Sol-High clearance. Blocking and Should-fix findings are resolved through the same Reviewer thread before Testing. A Reviewer tooling or access blocker leaves the feature in Building and is surfaced immediately. Track proposals remain non-blocking and require approval before backlog addition.
+Every feature receives independent review. Standard work routes to `reviewer-standard`; deep work routes to `reviewer-deep`. A deep trigger found during standard review promotes the record, changes its review route, and requires focused `reviewer-deep` clearance. Blocking and Should-fix findings are resolved through the same Reviewer thread before Testing. A Reviewer tooling or access blocker leaves the feature in Building and is surfaced immediately. Track proposals remain non-blocking and require approval before backlog addition.
 
 ### Testing and Acceptance
 
-After review clearance, the record moves to Testing. Independent-UAT routes spawn the Terra-Medium UAT agent. Builder routes execute the same recorded black-box cases in the existing builder context.
+After review clearance, the record moves to Testing. Independent-UAT routes spawn the `uat` agent. Builder routes execute the same recorded black-box cases in the existing builder context.
 
 Initial acceptance runs all feature cases. Rework reruns failed/affected cases plus the core case; it expands to every feature case only when shared behavior changed. Full repository end-to-end regression requires a documented broad trigger.
 
@@ -127,7 +167,13 @@ Independent review of completed release evidence is required before the readines
 
 ## Context Routing
 
-Each phase generates a current packet capped around 6,000 characters. Packets use one source range per block, include only profile-relevant design/AI context, distinguish unavailable/clean/changed Git states, and point to omitted optional ranges when the soft budget is reached. Release packets index the canonical record, active MVP readiness/approval, platform/runtime claims, release commands, and current-status documentation.
+Each phase generates a current packet. Packets use one source range per block, include only profile-relevant design/AI context, distinguish unavailable/clean/changed Git states, and index the canonical release record, active MVP readiness/approval, platform/runtime claims, release commands, and current-status documentation for a release pass.
+
+The default 4,000-character budget meters supplementary blocks only. Required blocks are the phase's subject matter — the feature or release record under work — and always emit, so a large mandatory record can never crowd out the standards a phase needs. Supplementary blocks are admitted cheapest first, and an excerpt larger than half of its complete source is dropped in favor of a pointer to that source.
+
+Routed table rows match the row label, not the row body, so a term like `Build` cannot pull in every row that merely mentions building.
+
+Every packet ends with an accounting footer stating what it spent, what was required, and a warning naming each omitted block with its size and the reason it was dropped. Silent omission is the failure mode this design exists to remove.
 
 The packet is never an evidence cap. Agents inspect affected code, callers, tests, configuration, schemas, migrations, or complete sections when correctness requires it.
 
@@ -145,7 +191,7 @@ Still-current passing results are reused. After fixes, failed and affected check
 
 For the first eight real features, each record captures profile/tags, roles and model effort, review and acceptance cycles, first-handoff Done approval, and credits/tokens when exposed by the Codex surface.
 
-The target is at least 30% lower median usage for comparable standard features without more user-rejected Done handoffs, escaped defects, or routing-caused rework. A quality failure promotes that defect class to deep routing rather than reverting every efficiency gain. Luna is not used for UAT until the balanced profile has evidence and a later trial is explicitly approved.
+The target is at least 30% lower median usage for comparable standard features without more user-rejected Done handoffs, escaped defects, or routing-caused rework. A quality failure promotes that defect class to deep routing rather than reverting every efficiency gain.
 
 ## Canonical Ownership
 

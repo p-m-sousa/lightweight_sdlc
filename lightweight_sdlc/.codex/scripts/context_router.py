@@ -14,7 +14,16 @@ from typing import Iterable
 
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 FIELD = re.compile(r"^-\s+([^:]+):\s*(.+?)\s*$")
-DEFAULT_BUDGET = 6000
+
+# The budget meters supplementary blocks only. Required blocks are the phase's
+# subject matter and always emit, so a large mandatory record can never crowd
+# out the standards a phase needs.
+DEFAULT_BUDGET = 4000
+
+# A supplementary excerpt only earns its place when it costs materially less
+# than an agent reading the whole source document. Above this share, shipping
+# the excerpt buys nothing, so the packet points at the source instead.
+MAX_EXCERPT_SHARE = 0.5
 
 
 @dataclass(frozen=True)
@@ -67,12 +76,23 @@ def preamble(lines: list[str]) -> list[tuple[int, str]]:
     return [(index + 1, lines[index]) for index in range(end)]
 
 
+def row_label(line: str) -> str:
+    """First cell of a table row: what the row is about, not what it mentions."""
+    return normalize(line.strip().strip("|").split("|")[0])
+
+
 def matching_rows(lines: list[str], terms: Iterable[str]) -> list[tuple[int, str]]:
+    """Match routing terms against the row label only.
+
+    Matching the whole row lets a term like `Build` hit every row that merely
+    mentions building, pulling thousands of characters of unrelated context in
+    place of the rows actually asked for.
+    """
     wanted = tuple(normalize(term) for term in terms)
     return [
         (index + 1, line)
         for index, line in enumerate(lines)
-        if line.lstrip().startswith("|") and any(term in line.casefold() for term in wanted)
+        if line.lstrip().startswith("|") and any(term in row_label(line) for term in wanted)
     ]
 
 
@@ -125,28 +145,91 @@ def render_group(path: str, label: str, group: tuple[tuple[int, str], ...]) -> s
     return f"\n=== {reference} :: {label} ===\n{body}\n"
 
 
-def render_omission(block: Block) -> str:
-    groups = contiguous_groups(block.content)
-    if not groups:
-        return ""
+def block_references(block: Block) -> str:
     references = []
-    for group in groups:
+    for group in contiguous_groups(block.content):
         start, end = group[0][0], group[-1][0]
         references.append(f"{block.path}:{start}" if start == end else f"{block.path}:{start}-{end}")
-    return f"\n=== {', '.join(references)} :: {block.label} ===\n[Omitted by packet budget; open only if needed.]\n"
+    return ", ".join(references)
+
+
+def render_block(block: Block) -> str:
+    return "".join(render_group(block.path, block.label, group) for group in contiguous_groups(block.content))
+
+
+def render_omission(block: Block, cost: int, reason: str) -> str:
+    if not block.content:
+        return ""
+    return (
+        f"\n=== {block_references(block)} :: {block.label} ===\n"
+        f"[Omitted by packet budget; {cost} chars, {reason}. Open the source when correctness requires it.]\n"
+    )
+
+
+def source_cost(root: Path, relative: str) -> int:
+    """Cost of an agent reading the whole source document instead of the excerpt."""
+    path = root / relative
+    if not path.is_file():
+        return 0
+    return len(path.read_text(encoding="utf-8", errors="replace"))
+
+
+def plan_supplementary(root: Path, blocks: list[Block], budget: int) -> tuple[dict[int, str], int]:
+    """Choose which supplementary blocks ship, cheapest first.
+
+    A block is dropped when its excerpt does not cost materially less than
+    reading its whole source, or when the supplementary budget is spent. Only
+    supplementary blocks are metered, so required context never displaces them.
+    """
+    dropped: dict[int, str] = {}
+    spent = 0
+    optional = [(index, block) for index, block in enumerate(blocks) if block.content and not block.required]
+    costs = {index: len(render_block(block)) for index, block in optional}
+    for index, block in sorted(optional, key=lambda entry: (costs[entry[0]], entry[0])):
+        cost = costs[index]
+        source = source_cost(root, block.path)
+        if source and cost > source * MAX_EXCERPT_SHARE:
+            dropped[index] = f"excerpt is {cost} of a {source}-char source and saves too little to ship"
+        elif spent + cost > budget:
+            dropped[index] = f"supplementary budget exhausted at {spent} of {budget} chars"
+        else:
+            spent += cost
+    return dropped, spent
+
+
+def render_accounting(required: list[int], optional_count: int, spent: int, budget: int, omitted: list[str]) -> str:
+    lines = [
+        "\n=== packet accounting ===",
+        f"Required: {len(required)} blocks, {sum(required)} chars — phase subject matter, always emitted and never metered.",
+        f"Supplementary: {optional_count - len(omitted)} of {optional_count} blocks shipped, {spent} of {budget} chars spent.",
+    ]
+    if omitted:
+        lines.append(f"WARNING: {len(omitted)} supplementary block(s) omitted; open each source directly when correctness requires it:")
+        lines.extend(f"  - {entry}" for entry in omitted)
+    return "\n".join(lines) + "\n"
 
 
 def render_packet(phase: str, root: Path, blocks: list[Block], budget: int) -> str:
+    dropped, spent = plan_supplementary(root, blocks, budget)
     output = f"Context packet: {phase}\nRoot: {root}\nRead-only starting index; expand only when correctness requires it.\n"
-    for block in blocks:
+    required: list[int] = []
+    optional_count = 0
+    omitted: list[str] = []
+    for index, block in enumerate(blocks):
         if not block.content:
             continue
-        rendered = "".join(render_group(block.path, block.label, group) for group in contiguous_groups(block.content))
-        if block.required or len(output) + len(rendered) <= budget:
+        rendered = render_block(block)
+        if block.required:
+            required.append(len(rendered))
             output += rendered
+            continue
+        optional_count += 1
+        if index in dropped:
+            output += render_omission(block, len(rendered), dropped[index])
+            omitted.append(f"{block_references(block)} :: {block.label} — {len(rendered)} chars ({dropped[index]})")
         else:
-            output += render_omission(block)
-    return output.rstrip() + "\n"
+            output += rendered
+    return output.rstrip() + "\n" + render_accounting(required, optional_count, spent, budget, omitted)
 
 
 def add_section(blocks: list[Block], root: Path, relative: str, heading: str, *, required: bool = False) -> None:
@@ -281,6 +364,8 @@ def release_blocks(root: Path, release: str) -> list[Block]:
     _, relative, lines = resolve_record(root, release, "release")
     blocks: list[Block] = [Block(relative, "release record metadata", tuple(preamble(lines)), True)]
 
+    # The record under review is the phase's subject matter, exactly as the
+    # feature record is for Build, Review, and UAT: required, never metered.
     for heading in (
         "Frozen MVP and Checklist Snapshot",
         "Supported Platform and Runtime Claims",
@@ -288,15 +373,15 @@ def release_blocks(root: Path, release: str) -> list[Block]:
     ):
         content = section(lines, heading)
         if content:
-            blocks.append(Block(relative, heading, tuple(content)))
+            blocks.append(Block(relative, heading, tuple(content), True))
 
     recent = latest_subsections(lines, "Readiness and Rework Cycles", ("Readiness Cycle", "Rework Cycle"))
     if recent:
-        blocks.append(Block(relative, "latest readiness and rework cycles", tuple(recent)))
+        blocks.append(Block(relative, "latest readiness and rework cycles", tuple(recent), True))
     for heading in ("Independent Evidence Review", "Separate Approval Authorities"):
         content = section(lines, heading)
         if content:
-            blocks.append(Block(relative, heading, tuple(content)))
+            blocks.append(Block(relative, heading, tuple(content), True))
 
     mvp = read_lines(root / "MVP.md")
     if mvp:
@@ -362,7 +447,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--feature", help="Feature-record path for Build, Review, or UAT.")
     parser.add_argument("--release", help="Harness-owned release-record path for Release.")
     parser.add_argument("--root", type=Path, help="Project root; defaults to discovery from the current directory.")
-    parser.add_argument("--budget-chars", type=int, default=DEFAULT_BUDGET, help="Soft packet character budget.")
+    parser.add_argument(
+        "--budget-chars",
+        type=int,
+        default=DEFAULT_BUDGET,
+        help="Soft character budget for supplementary blocks; required blocks are never metered.",
+    )
     args = parser.parse_args()
     if args.phase == "plan" and not args.item:
         parser.error("Plan requires --item.")
